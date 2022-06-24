@@ -1,8 +1,8 @@
 {
-  "name": "server",
-  "version": "1.0.0",
-  "description": "",
-  "main": "index.js",
+  "name": "pos-server",
+  "version": "0.0.1",
+  "description": "Point of Sale Node.js Server",
+  "main": "server.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1"
   },
@@ -11,11 +11,13 @@
   "license": "ISC",
   "dependencies": {
     "bcrypt": "^5.0.1",
+    "chalk": "^4.1.2",
     "cors": "^2.8.5",
     "dotenv": "^16.0.1",
     "express": "^4.18.1",
     "jsonwebtoken": "^8.5.1",
-    "mongoose": "^6.4.0"
+    "mongoose": "^6.4.0",
+    "rowdy-logger": "^1.0.2"
   },
   "devDependencies": {
     "eslint": "^8.18.0",
