@@ -20,6 +20,42 @@ const requireUser = async (req, res, next) => {
   }
 }
 
+const requireAdmin = async (req, res, next) => {
+  try {
+    const authHeader = req.headers.authorization
+    const decode = jwt.verify(authHeader, process.env.JWT_SECRET)
+    const foundUser = await db.User.findById(decode.id)
+    if (foundUser.role === "admin") {
+      res.locals.user = foundUser
+      next()
+    } else {
+      throw Error("User is not an admin")
+    }
+  } catch (err) {
+    console.warn(chalk.yellow("🚨 Authentication error: " + err.message))
+    res.status(401).json({ error: "User auth failed 😵" })
+  }
+}
+
+const requireCashier = async (req, res, next) => {
+  try {
+    const authHeader = req.headers.authorization
+    const decode = jwt.verify(authHeader, process.env.JWT_SECRET)
+    const foundUser = await db.User.findById(decode.id)
+    if (foundUser.role === "admin" || foundUser.role === "cashier") {
+      res.locals.user = foundUser
+      next()
+    } else {
+      throw Error("User is not a cashier or admin")
+    }
+  } catch (err) {
+    console.warn(chalk.yellow("🚨 Authentication error: " + err.message))
+    res.status(401).json({ error: "User auth failed 😵" })
+  }
+}
+
 module.exports = {
   requireUser,
+  requireAdmin,
+  requireCashier,
 }

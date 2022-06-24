@@ -2,7 +2,12 @@ const router = require("express").Router()
 const db = require("../../../models")
 const bcrypt = require("bcrypt")
 const jwt = require("jsonwebtoken")
-const { requireUser } = require("../../../middleware/authMiddleware")
+const {
+  requireUser,
+  requireAdmin,
+  requireCashier,
+} = require("../../../middleware/authMiddleware")
+const logAndSendError = require("../../../helpers/errorHandler")
 
 const createJWT = (user) => {
   const payload = {
@@ -13,6 +18,12 @@ const createJWT = (user) => {
   // sign the token and send it back
   const token = jwt.sign(payload, process.env.JWT_SECRET, { expiresIn: "1d" }) // expires in one day
   return token
+}
+
+const hashPassword = async (password) => {
+  const saltRounds = 12
+  const hash = await bcrypt.hash(password, saltRounds)
+  return hash
 }
 
 // POST /users/register -- CREATE a new user
@@ -30,9 +41,7 @@ router.post("/register", async (req, res) => {
     }
 
     // hash the user's password
-    const password = req.body.password
-    const saltRounds = 12
-    const hashedPassword = await bcrypt.hash(password, saltRounds)
+    const hashedPassword = await hashPassword(req.body.password)
 
     // create a new user with the hashed password
     const newUser = new db.User({
@@ -43,15 +52,88 @@ router.post("/register", async (req, res) => {
 
     const token = createJWT(newUser)
     res.json({ token })
-  } catch (err) {
-    console.warn(err)
-    // handle validation errors
-    if (err.name === "ValidationError") {
-      res.status(400).json({ error: err.message })
-    } else {
-      // handle all other errors
-      res.status(500).json({ error: "server error 500" })
+  } catch (error) {
+    logAndSendError("Cannot update user", error, res)
+  }
+})
+
+// PUT /users/:id -- UPDATE a user
+router.put("/:id", requireCashier, async (req, res) => {
+  try {
+    // find the user by id
+    const user = await db.User.findById(req.params.id)
+
+    // if the user doesn't exist, stop the route and send a response saying the user doesn't exist
+    if (!user) {
+      return res.status(404).json({ error: "user not found" })
     }
+
+    if (req.body.username) {
+      user.username = req.body.username
+    }
+
+    if (req.body.password) {
+      // if the user exists, and a password was sent, update the user's password
+      user.password = await hashPassword(req.body.password)
+    }
+
+    if (res.locals.user.role === "admin" && req.body.role) {
+      user.role = req.body.role
+    }
+
+    await user.save()
+
+    // send a response saying the user was updated
+    res.json({ user })
+  } catch (error) {
+    logAndSendError("Cannot update user", error, res)
+  }
+})
+
+// DELETE /users/:id -- DESTROY a user
+router.delete("/:id", requireAdmin, async (req, res) => {
+  try {
+    // find id
+    const id = req.params.id
+    // delete
+    await db.User.findByIdAndDelete(id)
+    // send 'no content' status
+    res.sendStatus(204)
+  } catch (error) {
+    logAndSendError("Cannot delete user", error, res)
+  }
+})
+
+// GET /users -- Index of all users
+router.get("/", requireAdmin, async (req, res) => {
+  try {
+    //find all users
+    const allUsers = await db.User.find({})
+    //send them to the client
+    res.json(allUsers)
+  } catch (error) {
+    logAndSendError("Cannot get users", error, res)
+  }
+})
+
+// GET /users/:id -- Show a user
+router.get("/:id", requireUser, async (req, res) => {
+  try {
+    const id = req.params.id
+    const user = await db.User.findById(id)
+
+    if (!user) {
+      return res.status(404).json({ error: "user not found" })
+    }
+
+    // If not an admin and trying to view someone else, stop the route and send a response saying the route is forbidden
+    if (!res.locals.user.role === "admin" && id !== res.locals.user.id) {
+      return res.status(403).json({ error: "forbidden" })
+    }
+
+    res.json(user)
+  } catch (error) {
+    logAndSendError("Cannot get user", error, res)
   }
 })
 
@@ -85,10 +167,8 @@ router.post("/login", async (req, res) => {
     const token = createJWT(foundUser)
 
     res.json({ token })
-  } catch (err) {
-    // don't forget to handle your errors
-    console.warn(err)
-    res.status(500).json({ msg: "Server room is on fire 🔥" })
+  } catch (error) {
+    logAndSendError("Cannot login", error, res)
   }
 })
 
