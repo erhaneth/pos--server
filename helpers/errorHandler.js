@@ -13,6 +13,7 @@ const logAndSendError = (errorMessage, errorObject, res) => {
   if (errorObject.name === "CastError") {
     console.warn(chalk.yellow("Invalid ID"), chalk.yellow(errorObject))
     res.status(400).json({ error: "Invalid ID" })
+    return
   }
 
   console.error(chalk.red(`Error: ${errorMessage}`), chalk.red(errorObject))
