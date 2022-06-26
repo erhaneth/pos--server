@@ -21,8 +21,8 @@ router.put("/:id", requireAdmin, async (req, res) => {
       req.params.id,
       req.body,
       { new: true }
-    )
-    res.json(updatedProduct.populate("category"))
+    ).populate("category")
+    res.json(updatedProduct)
   } catch (error) {
     logAndSendError("Cannot update product", error, res)
   }
