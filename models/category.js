@@ -8,7 +8,7 @@ const CategorySchema = new mongoose.Schema(
     },
     color: {
       type: String,
-      default: "Red",
+      default: "red",
     },
   },
   {
