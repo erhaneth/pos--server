@@ -4,7 +4,7 @@ const { requireCashier } = require("../../../middleware/authMiddleware")
 const { requireAdmin } = require("../../../middleware/authMiddleware")
 const logAndSendError = require("../../../helpers/errorHandler")
 
-// POST /orders -- get all orders
+// POST /orders -- create a new order
 router.post("/", requireCashier, async (req, res) => {
   try {
     const newOrder = await db.Order.create(req.body)
@@ -41,6 +41,8 @@ router.delete("/:id", requireAdmin, async (req, res) => {
 router.get("/", requireAdmin, async (req, res) => {
   try {
     const orders = await db.Order.find({})
+      .populate("cashier")
+      .populate("lineItems.product")
     res.json(orders)
   } catch (error) {
     logAndSendError("Cannot get orders", error, res)
