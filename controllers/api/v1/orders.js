@@ -20,6 +20,8 @@ router.put("/:id", requireAdmin, async (req, res) => {
     const id = req.params.id
     const options = { new: true }
     const updatedOrder = await db.Order.findByIdAndUpdate(id, req.body, options)
+      .populate("lineItems.product")
+      .populate("cashier")
     res.json(updatedOrder)
   } catch (error) {
     logAndSendError("Cannot update order", error, res)
