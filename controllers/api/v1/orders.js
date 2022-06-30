@@ -22,7 +22,13 @@ router.put("/:id", requireAdmin, async (req, res) => {
     const updatedOrder = await db.Order.findByIdAndUpdate(id, req.body, options)
       .populate("lineItems.product")
       .populate("cashier")
-    res.json(updatedOrder)
+
+    const orderCopy = { ...updatedOrder._doc }
+    const cashierCopy = orderCopy.cashier._doc
+    delete cashierCopy.password
+    orderCopy.cashier = cashierCopy
+
+    res.json(orderCopy)
   } catch (error) {
     logAndSendError("Cannot update order", error, res)
   }
@@ -45,7 +51,16 @@ router.get("/", requireAdmin, async (req, res) => {
     const orders = await db.Order.find({})
       .populate("cashier")
       .populate("lineItems.product")
-    res.json(orders)
+
+    const ordersCopy = orders.map((order) => {
+      const orderCopy = { ...order._doc }
+      const cashierCopy = orderCopy.cashier._doc
+      delete cashierCopy.password
+      orderCopy.cashier = cashierCopy
+      return orderCopy
+    })
+
+    res.json(ordersCopy)
   } catch (error) {
     logAndSendError("Cannot get orders", error, res)
   }
@@ -56,10 +71,18 @@ router.get("/:id", requireAdmin, async (req, res) => {
   try {
     const id = req.params.id
     const order = await db.Order.findById(id)
+      .populate("cashier")
+      .populate("lineItems.product")
     if (!order) {
       return res.status(404).json({ error: "Order not found" })
     }
-    res.json(order)
+
+    const orderCopy = { ...order._doc }
+    const cashierCopy = orderCopy.cashier._doc
+    delete cashierCopy.password
+    orderCopy.cashier = cashierCopy
+
+    res.json(orderCopy)
   } catch (error) {
     logAndSendError("Cannot get order", error, res)
   }

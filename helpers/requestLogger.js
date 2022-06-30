@@ -66,8 +66,11 @@ let requestLogger = (req, res, next) => {
       console.info(chalk.blue(`Query: ${JSON.stringify(req.query)}`))
     if (req.params && Object.keys(req.params).length > 0)
       console.info(chalk.blue(`Params: ${JSON.stringify(req.params)}`))
-    if (req.body && Object.keys(req.body).length > 0)
-      console.info(chalk.blue(`Body: ${JSON.stringify(req.body)}`))
+    if (req.body && Object.keys(req.body).length > 0) {
+      const bodyCopy = JSON.parse(JSON.stringify(req.body))
+      if (bodyCopy.password) bodyCopy.password = "******"
+      console.info(chalk.blue(`Body: ${JSON.stringify(bodyCopy)}`))
+    }
   })
 
   next()

@@ -37,7 +37,7 @@ router.post("/register", async (req, res) => {
     // disallow users from registering twice
     if (findUser) {
       // stop the route and send a response saying the user exists
-      return res.status(400).json({ msg: "username exists already 🤦‍♂️" })
+      return res.status(400).json({ error: "username exists already 🤦‍♂️" })
     }
 
     // hash the user's password
@@ -83,8 +83,11 @@ router.put("/:id", requireCashier, async (req, res) => {
 
     await user.save()
 
+    const userCopy = { ...user }
+    delete userCopy.password
+
     // send a response saying the user was updated
-    res.json({ user })
+    res.json({ userCopy })
   } catch (error) {
     logAndSendError("Cannot update user", error, res)
   }
@@ -109,8 +112,14 @@ router.get("/", requireAdmin, async (req, res) => {
   try {
     //find all users
     const allUsers = await db.User.find({})
+    console.log(allUsers)
+    const usersWithoutPasswords = allUsers.map((user) => {
+      const { username, role, id, createdAt, updatedAt } = user
+      return { username, role, id, createdAt, updatedAt }
+    })
+    console.log(usersWithoutPasswords)
     //send them to the client
-    res.json(allUsers)
+    res.json(usersWithoutPasswords)
   } catch (error) {
     logAndSendError("Cannot get users", error, res)
   }
@@ -131,7 +140,15 @@ router.get("/:id", requireUser, async (req, res) => {
       return res.status(403).json({ error: "forbidden" })
     }
 
-    res.json(user)
+    const { username, role, userId, createdAt, updatedAt } = user
+    const userWithoutPassword = {
+      username,
+      role,
+      id: userId,
+      createdAt,
+      updatedAt,
+    }
+    res.json(userWithoutPassword)
   } catch (error) {
     logAndSendError("Cannot get user", error, res)
   }
@@ -172,10 +189,10 @@ router.post("/login", async (req, res) => {
   }
 })
 
-// GET /users/auth-locked -- checks users credentials and only send back information if the user is logged in properly
-router.get("/auth-locked", requireUser, (req, res) => {
-  console.log("current user is:", res.locals.user)
-  res.json({ msg: "welcome to the secret auth-locked route 👋" })
-})
+// // GET /users/auth-locked -- checks users credentials and only send back information if the user is logged in properly
+// router.get("/auth-locked", requireUser, (req, res) => {
+//   console.log("current user is:", res.locals.user)
+//   res.json({ msg: "welcome to the secret auth-locked route 👋" })
+// })
 
 module.exports = router
