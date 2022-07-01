@@ -44,7 +44,7 @@ router.delete("/:id", requireAdmin, async (req, res) => {
 })
 
 // GET /categories -- reads all categories
-router.get("/", requireAdmin, requireCashier, async (req, res) => {
+router.get("/", requireCashier, requireCashier, async (req, res) => {
   try {
     const categories = await db.Category.find({})
     res.json(categories)

@@ -112,12 +112,10 @@ router.get("/", requireAdmin, async (req, res) => {
   try {
     //find all users
     const allUsers = await db.User.find({})
-    console.log(allUsers)
     const usersWithoutPasswords = allUsers.map((user) => {
       const { username, role, id, createdAt, updatedAt } = user
       return { username, role, id, createdAt, updatedAt }
     })
-    console.log(usersWithoutPasswords)
     //send them to the client
     res.json(usersWithoutPasswords)
   } catch (error) {
